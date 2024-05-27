@@ -5,27 +5,38 @@ from random import choice
 BACKGROUND_COLOR = "#B1DDC6"
 current_card = {}
 
-
 words = []
-with open("data/french_words.csv") as file:
-    reader = csv.DictReader(file)
-    for row in reader:
-        words.append({"french": row["French"], "english": row["English"]})
+try:
+    with open("data/words_to_learn.csv") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            words.append({"French": row["French"], "English": row["English"]})
+except FileNotFoundError:
+    with open("data/french_words.csv") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            words.append({"French": row["French"], "English": row["English"]})
 
 
-def next_card():
+def next_card(arg):
     global current_card, flip_timer
     window.after_cancel(flip_timer)
     current_card = choice(words)
+    if arg == 1:
+        words.remove(current_card)
+        with open("data/words_to_learn.csv", "w", newline="") as data_file:
+            writer = csv.DictWriter(data_file, fieldnames=["French", "English"])
+            writer.writeheader()
+            writer.writerows(words)
     canvas.itemconfig(card_title, text="French", fill="black")
-    canvas.itemconfig(card_word, text=current_card["french"], fill="black")
+    canvas.itemconfig(card_word, text=current_card["French"], fill="black")
     canvas.itemconfig(card_background, image=front_img)
     flip_timer = window.after(3000, func=flip_card)
 
 
 def flip_card():
     canvas.itemconfig(card_title, text="English", fill="white")
-    canvas.itemconfig(card_word, text=current_card["english"], fill="white")
+    canvas.itemconfig(card_word, text=current_card["English"], fill="white")
     canvas.itemconfig(card_background, image=back_img)
 
 
@@ -45,13 +56,13 @@ canvas.config(bg=BACKGROUND_COLOR, highlightthickness=0)
 canvas.grid(row=0, column=0, columnspan=2)
 
 right_img = PhotoImage(file="images/right.png")
-button_right = Button(image=right_img, highlightthickness=0, command=next_card)
+button_right = Button(image=right_img, highlightthickness=0, command=lambda: next_card(1))
 button_right.grid(row=1, column=1)
 
 wrong_img = PhotoImage(file="images/wrong.png")
-button_wrong = Button(image=wrong_img, highlightthickness=0, command=next_card)
+button_wrong = Button(image=wrong_img, highlightthickness=0, command=lambda: next_card(2))
 button_wrong.grid(row=1, column=0)
 
-next_card()
+next_card(3)
 
 window.mainloop()
